@@ -3,11 +3,23 @@ set(TEST_TARGET mytest)
 
 add_executable(${TEST_TARGET})
 
-# Test source files
+# Test source files and game source files for testing
 target_sources(
     ${TEST_TARGET}
     PRIVATE
     test.cpp
+    tetris_test.cpp
+    ${PROJECT_SOURCE_DIR}/src/tetromino.cpp
+    ${PROJECT_SOURCE_DIR}/src/board.cpp
+    ${PROJECT_SOURCE_DIR}/src/game.cpp
+    ${PROJECT_SOURCE_DIR}/src/ai.cpp
+)
+
+# Include directories for tests
+target_include_directories(
+    ${TEST_TARGET}
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
 )
 
 # Link libraries
