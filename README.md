@@ -71,14 +71,16 @@ The game will start in the terminal. Use the controls listed above to play, or p
 
 ## How the AI Works
 
-The AI uses a heuristic-based evaluation function to find the best position for each piece:
+The AI uses a heuristic-based evaluation function with optimized weights based on the research from [this article](https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/). The weights were determined through genetic algorithm optimization.
 
-- **Height**: Minimizes the overall height of the stack
-- **Holes**: Avoids creating holes (empty cells with filled cells above)
-- **Bumpiness**: Prefers smooth, even surfaces
-- **Line Clears**: Prioritizes moves that clear complete lines
+The evaluation function considers four key factors:
 
-The AI evaluates all possible positions (rotations and horizontal placements) for each piece and selects the one with the highest score.
+- **Aggregate Height** (weight: -0.510066): Sum of the heights of all columns - penalizes tall stacks
+- **Complete Lines** (weight: +0.760666): Number of lines cleared - rewards line clearing
+- **Holes** (weight: -0.35663): Empty cells with filled cells above them - heavily penalized as they're hard to fill
+- **Bumpiness** (weight: -0.184483): Sum of absolute height differences between adjacent columns - prefers smooth surfaces
+
+The AI evaluates all possible positions (rotations and horizontal placements) for each piece and selects the move with the highest score. This optimized approach allows the AI to play significantly better than simple heuristics.
 
 ## Project Structure
 

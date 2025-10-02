@@ -88,14 +88,16 @@ int AI::evaluatePosition(const Board &board, const Tetromino &piece,
     int holes = countHoles(test_board);
     int bumpiness = calculateBumpiness(test_board);
 
-    // Scoring weights (tuned for good performance)
-    int score = 0;
-    score += cleared_lines * 100;  // Reward line clears
-    score -= height * 5;           // Penalize height
-    score -= holes * 35;           // Heavily penalize holes
-    score -= bumpiness * 10;       // Penalize uneven surface
+    // Weights based on https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
+    // These weights were found through genetic algorithm optimization
+    double score = 0.0;
+    score += cleared_lines * 0.760666;   // Reward line clears
+    score += height * (-0.510066);       // Penalize aggregate height
+    score += holes * (-0.35663);         // Penalize holes
+    score += bumpiness * (-0.184483);    // Penalize bumpiness
 
-    return score;
+    // Scale to integer for comparison (multiply by 1000 to maintain precision)
+    return static_cast<int>(score * 1000);
 }
 
 AI::Move AI::findBestMove(const Game &game) {

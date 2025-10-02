@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <tetris/ai.hpp>
 #include <tetris/board.hpp>
 #include <tetris/game.hpp>
 #include <tetris/tetromino.hpp>
@@ -78,5 +79,33 @@ TEST(GameTest, Reset) {
     EXPECT_EQ(game.getLevel(), 1);
     EXPECT_EQ(game.getLinesCleared(), 0);
     EXPECT_EQ(game.getState(), tetris::GameState::PLAYING);
+}
+
+// Test AI evaluation function
+TEST(AITest, EvaluatePosition) {
+    tetris::AI ai;
+    tetris::Board board;
+    tetris::Tetromino piece(tetris::TetrominoType::I);
+
+    // Should be able to evaluate a valid position
+    int score = ai.evaluatePosition(board, piece, {3, 0});
+    EXPECT_GT(score, std::numeric_limits<int>::min());
+
+    // Should return minimum score for invalid position
+    int invalid_score = ai.evaluatePosition(board, piece, {-10, 0});
+    EXPECT_EQ(invalid_score, std::numeric_limits<int>::min());
+}
+
+// Test AI can find a move
+TEST(AITest, FindBestMove) {
+    tetris::AI ai;
+    tetris::Game game;
+
+    tetris::AI::Move move = ai.findBestMove(game);
+    
+    // Should return a valid move with a score
+    EXPECT_GE(move.rotation, 0);
+    EXPECT_LT(move.rotation, 4);
+    EXPECT_GT(move.score, std::numeric_limits<int>::min());
 }
 
