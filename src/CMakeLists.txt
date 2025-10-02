@@ -1,6 +1,5 @@
 # Main executable target
-# TODO: Change 'main' to your preferred executable name
-set(EXECUTABLE_NAME main)
+set(EXECUTABLE_NAME tetris)
 
 add_executable(${EXECUTABLE_NAME})
 
@@ -9,7 +8,11 @@ target_sources(
     ${EXECUTABLE_NAME}
     PRIVATE
     main.cpp
-    myclass.cpp
+    tetromino.cpp
+    board.cpp
+    game.cpp
+    renderer.cpp
+    ai.cpp
 )
 
 # Include directories
@@ -17,6 +20,7 @@ target_include_directories(
     ${EXECUTABLE_NAME}
     PRIVATE
     ${PROJECT_SOURCE_DIR}/include
+    ${CURSES_INCLUDE_DIR}
 )
 
 # Link libraries
@@ -25,6 +29,7 @@ target_link_libraries(
     PRIVATE
     project_compile_flags  # Custom compile flags from cmake/CompileFlags.cmake
     fmt::fmt               # fmt library for formatting
+    ${CURSES_LIBRARIES}    # ncurses library
 )
 
 # C++ standard (inherits from root, but can be overridden here)
