@@ -3,6 +3,7 @@
 /.vscode/
 /bin/
 /build/
+/vcpkg_installed/
 
 # CMake
 CMakeCache.txt

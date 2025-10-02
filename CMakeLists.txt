@@ -13,11 +13,10 @@ if(DEFINED ENV{VCPKG_ROOT})
 endif()
 
 # Project definition
-# TODO: Change 'MyProject' to your project name
 project(
-    MyProject
+    Tetris
     VERSION 1.0.0
-    DESCRIPTION "C++ Project Template"
+    DESCRIPTION "Terminal-based Tetris game with AI"
     LANGUAGES CXX
 )
 
@@ -32,6 +31,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Dependencies (managed via vcpkg.json)
 find_package(fmt CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+find_package(Curses REQUIRED)
 
 # Add source directory
 add_subdirectory(src)

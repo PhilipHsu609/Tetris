@@ -1,40 +1,53 @@
-# C++ Project Template
+# Tetris
 
-[![CI](https://github.com/PhilipHsu609/CppTemplate/actions/workflows/ci.yml/badge.svg)](https://github.com/PhilipHsu609/CppTemplate/actions/workflows/ci.yml)
+[![CI](https://github.com/PhilipHsu609/Tetris/actions/workflows/ci.yml/badge.svg)](https://github.com/PhilipHsu609/Tetris/actions/workflows/ci.yml)
 
-A modern, easy-to-use C++ project template designed for small to personal projects. Focus on simplicity and extensibility.
+A terminal-based Tetris game with AI auto-play functionality, built with modern C++17.
 
 ## Features
 
-- Modern CMake (3.15+) build system
-- vcpkg for dependency management
-- GoogleTest for unit testing
-- Clang-format and clang-tidy for code quality
-- Pre-configured compiler warnings and flags
-- Simple Makefile wrapper for common tasks
-- Automated CI/CD with GitHub Actions
+- Classic Tetris gameplay in the terminal
+- AI auto-play mode that can play the game automatically
+- All 7 standard tetromino pieces (I, O, T, S, Z, J, L)
+- Line clearing with scoring system
+- Progressive difficulty levels
+- Built with modern CMake and vcpkg for dependency management
+- ncurses-based terminal UI
+
+## Controls
+
+- **Arrow Keys**: Move piece left/right/down
+- **Up Arrow**: Rotate piece
+- **Space**: Hard drop
+- **A**: Toggle AI auto-play mode
+- **R**: Reset game
+- **Q**: Quit game
 
 ## Quick Start
 
 ### Prerequisites
 
 - CMake 3.15 or higher
-- A C++17 compatible compiler (GCC, Clang, or MSVC)
+- A C++17 compatible compiler (GCC or Clang)
 - [vcpkg](https://github.com/microsoft/vcpkg) package manager
+- ncurses library
 
 ### Setup
 
-1. Clone this template repository
+1. Install system dependencies:
+   ```bash
+   # On Ubuntu/Debian
+   sudo apt-get install libncurses-dev
+   ```
+
 2. Set the `VCPKG_ROOT` environment variable to your vcpkg installation path:
    ```bash
    export VCPKG_ROOT=/path/to/vcpkg
    ```
-3. Modify `CMakeLists.txt` to set your project name (replace `MyProject`)
-4. Update `vcpkg.json` if you need different dependencies
 
 ### Building
 
-Using the Makefile (Linux/macOS):
+Using the Makefile (Linux):
 ```bash
 make all          # Configure, build, and test
 make build        # Build only
@@ -46,52 +59,65 @@ Or using CMake directly:
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-cd build && ctest
 ```
 
-## Folder Structure
+### Running
 
-- `include/`: Public header files (organized by project name)
-- `src/`: Source files and private headers
-- `test/`: Unit test files
-- `cmake/`: CMake modules and utility scripts
-- `bin/`: Output binaries (generated)
-- `build/`: Build artifacts (generated)
+```bash
+./build/src/tetris
+```
 
-## Optional Folders (Create as Needed)
+The game will start in the terminal. Use the controls listed above to play, or press 'A' to watch the AI play automatically.
 
-- `doc/`: Documentation
-- `examples/`: Usage examples
-- `third_party/`: Third-party libraries (non-vcpkg)
-- `data/`: Data files
-- `utils/`: Utility scripts
+## How the AI Works
 
-## File Extension Conventions
+The AI uses a heuristic-based evaluation function to find the best position for each piece:
 
-- **Headers**: `.h`, `.hpp`, `.hxx`, `.hh`
-- **Header implementations**: `.i.h`, `.i.hpp`, `-inl.h`, `-inl.hpp`
-- **Sources**: `.c`, `.cpp`, `.cxx`, `.cc`
+- **Height**: Minimizes the overall height of the stack
+- **Holes**: Avoids creating holes (empty cells with filled cells above)
+- **Bumpiness**: Prefers smooth, even surfaces
+- **Line Clears**: Prioritizes moves that clear complete lines
 
-## Customization
+The AI evaluates all possible positions (rotations and horizontal placements) for each piece and selects the one with the highest score.
 
-### Adding Dependencies
+## Project Structure
 
-Edit `vcpkg.json` to add new dependencies:
-```json
-{
-  "dependencies": [
-    "fmt",
-    "gtest",
-    "your-new-dependency"
-  ]
+```
+include/tetris/     # Public headers
+├── tetromino.hpp   # Tetromino piece definitions
+├── board.hpp       # Game board logic
+├── game.hpp        # Game state management
+├── renderer.hpp    # Terminal rendering with ncurses
+└── ai.hpp          # AI decision-making
+
+src/                # Implementation files
+├── main.cpp        # Application entry point
+├── tetromino.cpp
+├── board.cpp
+├── game.cpp
+├── renderer.cpp
+└── ai.cpp
+
+test/               # Unit tests
+└── test.cpp
+```
+
+## Development
+
+### Adding Tests
+
+This project uses GoogleTest. Add test files in the `test/` directory:
+
+```cpp
+#include <gtest/gtest.h>
+#include <tetris/board.hpp>
+
+TEST(BoardTest, CanPlacePiece) {
+    tetris::Board board;
+    tetris::Tetromino piece(tetris::TetrominoType::I);
+    EXPECT_TRUE(board.canPlace(piece, {0, 0}));
 }
 ```
-
-The `vcpkg-configuration.json` file pins the vcpkg baseline version to ensure reproducible builds. Update the baseline commit hash periodically to get newer package versions.
-
-### Compiler Flags
-
-Modify `cmake/CompileFlags.cmake` to adjust warning levels and compiler options.
 
 ### Code Style
 
@@ -106,20 +132,14 @@ clang-format -i src/*.cpp include/**/*.hpp
 ## Continuous Integration
 
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that:
-- Builds the project on Linux, macOS, and Windows
-- Tests with multiple compilers (GCC, Clang, MSVC)
+- Builds the project on Linux
+- Tests with both GCC and Clang compilers
 - Runs all unit tests automatically
 - Uploads test results on failure
 
 The CI runs on every push and pull request to the `main` branch.
 
-## Project Structure Guidelines
-
-1. Keep public headers in `include/<project-name>/`
-2. Keep implementation details in `src/`
-3. One test file per source file in `test/`
-4. Use descriptive names for executables and libraries
-
 ## License
 
-This template is provided under the MIT License. See LICENSE file for details.
+This project is provided under the MIT License. See LICENSE file for details.
+
