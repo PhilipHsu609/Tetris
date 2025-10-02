@@ -2,7 +2,7 @@
 
 namespace tetris {
 
-Renderer::Renderer() : game_win_(nullptr), info_win_(nullptr) {}
+Renderer::Renderer() : game_win_(nullptr), info_win_(nullptr), board_height_(BOARD_HEIGHT), board_width_(BOARD_WIDTH) {}
 
 Renderer::~Renderer() { cleanup(); }
 
@@ -24,11 +24,22 @@ void Renderer::init() {
     init_pair(6, COLOR_BLUE, COLOR_BLACK);    // J
     init_pair(7, COLOR_WHITE, COLOR_BLACK);   // L
 
-    // Create windows
-    int board_width = BOARD_WIDTH * 2 + 2;
-    int board_height = BOARD_HEIGHT + 2;
-    game_win_ = newwin(board_height, board_width, 1, 2);
-    info_win_ = newwin(board_height, 30, 1, board_width + 4);
+    // Get terminal size
+    int term_height, term_width;
+    getmaxyx(stdscr, term_height, term_width);
+
+    // Calculate board dimensions based on terminal height
+    // We need 2 lines for borders, 1 line for top margin, and some space for info
+    // Minimum height is 10, maximum is BOARD_HEIGHT (20)
+    int available_height = term_height - 3; // 1 for top margin, 2 for borders
+    board_height_ = available_height < 10 ? 10 : (available_height > BOARD_HEIGHT ? BOARD_HEIGHT : available_height);
+    board_width_ = BOARD_WIDTH;
+
+    // Create windows with calculated dimensions
+    int win_height = board_height_ + 2;
+    int win_width = board_width_ * 2 + 2;
+    game_win_ = newwin(win_height, win_width, 1, 2);
+    info_win_ = newwin(win_height, 30, 1, win_width + 4);
 }
 
 void Renderer::cleanup() {
@@ -46,7 +57,7 @@ void Renderer::drawBorder(WINDOW *win, int height, int width) {
 void Renderer::drawBlock(WINDOW *win, int x, int y, int color) {
     if (color > 0) {
         wattron(win, COLOR_PAIR(color));
-        mvwaddstr(win, y + 1, x * 2 + 1, "[]");
+        mvwaddstr(win, y + 1, x * 2 + 1, "██");
         wattroff(win, COLOR_PAIR(color));
     }
 }
@@ -55,16 +66,21 @@ void Renderer::render(const Game &game) {
     werase(game_win_);
     werase(info_win_);
 
-    drawBorder(game_win_, BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2);
-    drawBorder(info_win_, BOARD_HEIGHT + 2, 30);
+    int win_height = board_height_ + 2;
+    int win_width = board_width_ * 2 + 2;
+    
+    drawBorder(game_win_, win_height, win_width);
+    drawBorder(info_win_, win_height, 30);
 
     // Draw board
     const Board &board = game.getBoard();
-    for (int y = 0; y < board.getHeight(); y++) {
+    // Only draw the visible portion of the board based on board_height_
+    int start_y = board.getHeight() > board_height_ ? board.getHeight() - board_height_ : 0;
+    for (int y = start_y; y < board.getHeight(); y++) {
         for (int x = 0; x < board.getWidth(); x++) {
             int cell = board.getCell(x, y);
             if (cell > 0) {
-                drawBlock(game_win_, x, y, cell);
+                drawBlock(game_win_, x, y - start_y, cell);
             }
         }
     }
@@ -76,8 +92,8 @@ void Renderer::render(const Game &game) {
     for (const auto &block : piece.getBlocks()) {
         int x = pos.x + block.x;
         int y = pos.y + block.y;
-        if (y >= 0 && y < board.getHeight() && x >= 0 && x < board.getWidth()) {
-            drawBlock(game_win_, x, y, color);
+        if (y >= start_y && y < board.getHeight() && x >= 0 && x < board.getWidth()) {
+            drawBlock(game_win_, x, y - start_y, color);
         }
     }
 
@@ -101,12 +117,14 @@ void Renderer::render(const Game &game) {
 
 void Renderer::renderGameOver(const Game &game) {
     werase(game_win_);
-    drawBorder(game_win_, BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2);
+    int win_height = board_height_ + 2;
+    int win_width = board_width_ * 2 + 2;
+    drawBorder(game_win_, win_height, win_width);
 
-    mvwprintw(game_win_, BOARD_HEIGHT / 2 - 1, BOARD_WIDTH - 4, "GAME OVER");
-    mvwprintw(game_win_, BOARD_HEIGHT / 2 + 1, BOARD_WIDTH - 6,
+    mvwprintw(game_win_, board_height_ / 2 - 1, board_width_ - 4, "GAME OVER");
+    mvwprintw(game_win_, board_height_ / 2 + 1, board_width_ - 6,
               "Score: %d", game.getScore());
-    mvwprintw(game_win_, BOARD_HEIGHT / 2 + 2, BOARD_WIDTH - 8,
+    mvwprintw(game_win_, board_height_ / 2 + 2, board_width_ - 8,
               "Press R to restart");
 
     wrefresh(game_win_);

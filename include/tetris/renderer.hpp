@@ -18,6 +18,8 @@ class Renderer {
   private:
     WINDOW *game_win_;
     WINDOW *info_win_;
+    int board_height_;
+    int board_width_;
 
     void drawBorder(WINDOW *win, int height, int width);
     void drawBlock(WINDOW *win, int x, int y, int color);
