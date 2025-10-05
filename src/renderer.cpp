@@ -15,14 +15,14 @@ void Renderer::init() {
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);
 
-    // Initialize color pairs
-    init_pair(1, COLOR_CYAN, COLOR_BLACK);    // I
-    init_pair(2, COLOR_YELLOW, COLOR_BLACK);  // O
-    init_pair(3, COLOR_MAGENTA, COLOR_BLACK); // T
-    init_pair(4, COLOR_GREEN, COLOR_BLACK);   // S
-    init_pair(5, COLOR_RED, COLOR_BLACK);     // Z
-    init_pair(6, COLOR_BLUE, COLOR_BLACK);    // J
-    init_pair(7, COLOR_WHITE, COLOR_BLACK);   // L
+    // Initialize color pairs - using colors as background for compatibility
+    init_pair(1, COLOR_BLACK, COLOR_CYAN);    // I
+    init_pair(2, COLOR_BLACK, COLOR_YELLOW);  // O
+    init_pair(3, COLOR_BLACK, COLOR_MAGENTA); // T
+    init_pair(4, COLOR_BLACK, COLOR_GREEN);   // S
+    init_pair(5, COLOR_BLACK, COLOR_RED);     // Z
+    init_pair(6, COLOR_BLACK, COLOR_BLUE);    // J
+    init_pair(7, COLOR_BLACK, COLOR_WHITE);   // L
 
     // Get terminal size
     int term_height, term_width;
@@ -57,7 +57,7 @@ void Renderer::drawBorder(WINDOW *win, int height, int width) {
 void Renderer::drawBlock(WINDOW *win, int x, int y, int color) {
     if (color > 0) {
         wattron(win, COLOR_PAIR(color));
-        mvwaddstr(win, y + 1, x * 2 + 1, "██");
+        mvwaddstr(win, y + 1, x * 2 + 1, "  ");
         wattroff(win, COLOR_PAIR(color));
     }
 }
