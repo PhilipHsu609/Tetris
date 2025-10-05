@@ -5,7 +5,7 @@ TEST_DIR = $(BUILD_DIR)/test
 CMAKE_FLAGS=-DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
             -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
 
-.PHONY: all config build clean test
+.PHONY: all config build clean distclean test
 
 all: config build test
 
@@ -19,4 +19,7 @@ test: build
 	cd $(TEST_DIR) && ctest
 
 clean:
+	cmake --build $(BUILD_DIR) --target clean
+
+distclean:
 	rm -rf $(BUILD_DIR)
