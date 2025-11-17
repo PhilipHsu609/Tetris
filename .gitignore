@@ -35,3 +35,7 @@ Testing/
 *.gcda
 *.gcno
 
+# CodeQL artifacts
+_codeql_*
+.codeql/
+
