@@ -2,12 +2,13 @@
 
 [![CI](https://github.com/PhilipHsu609/Tetris/actions/workflows/ci.yml/badge.svg)](https://github.com/PhilipHsu609/Tetris/actions/workflows/ci.yml)
 
-A terminal-based Tetris game with AI auto-play functionality, built with modern C++17.
+A terminal-based Tetris game with AI auto-play functionality and multi-player mode, built with modern C++17.
 
 ## Features
 
 - Classic Tetris gameplay in the terminal
 - AI auto-play mode that can play the game automatically
+- **Multi-player mode**: Watch multiple AI players compete simultaneously in the same terminal
 - All 7 standard tetromino pieces (I, O, T, S, Z, J, L)
 - Line clearing with scoring system
 - Progressive difficulty levels
@@ -16,12 +17,18 @@ A terminal-based Tetris game with AI auto-play functionality, built with modern 
 
 ## Controls
 
+### Single Player Mode (default or with argument `1`)
 - **Arrow Keys**: Move piece left/right/down
 - **Up Arrow**: Rotate piece
 - **Space**: Hard drop
 - **A**: Toggle AI auto-play mode
 - **R**: Reset game
 - **Q**: Quit game
+
+### Multi-Player Mode (with argument `2` or more)
+- **R**: Reset all games
+- **Q**: Quit
+- All players are controlled by AI automatically
 
 ## Quick Start
 
@@ -63,11 +70,33 @@ cmake --build build
 
 ### Running
 
+**Single Player Mode (with AI or manual control):**
 ```bash
 ./build/src/tetris
+# or explicitly
+./build/src/tetris 1
 ```
 
-The game will start in the terminal. Use the controls listed above to play, or press 'A' to watch the AI play automatically.
+The game will start in the terminal with AI auto-play enabled by default. Press 'A' to toggle between AI and manual control.
+
+**Multi-Player Mode (watch multiple AIs compete):**
+```bash
+# 2 players
+./build/src/tetris 2
+
+# 3 players
+./build/src/tetris 3
+
+# Up to 8 players
+./build/src/tetris 8
+```
+
+In multi-player mode, all players are AI-controlled and compete simultaneously. Watch their boards side-by-side in the terminal!
+
+**Help:**
+```bash
+./build/src/tetris --help
+```
 
 ## How the AI Works
 
@@ -90,7 +119,8 @@ include/tetris/     # Public headers
 ├── board.hpp       # Game board logic
 ├── game.hpp        # Game state management
 ├── renderer.hpp    # Terminal rendering with ncurses
-└── ai.hpp          # AI decision-making
+├── ai.hpp          # AI decision-making
+└── multiplayer.hpp # Multi-player game coordination
 
 src/                # Implementation files
 ├── main.cpp        # Application entry point
@@ -98,7 +128,8 @@ src/                # Implementation files
 ├── board.cpp
 ├── game.cpp
 ├── renderer.cpp
-└── ai.cpp
+├── ai.cpp
+└── multiplayer.cpp
 
 test/               # Unit tests
 └── test.cpp
