@@ -2,6 +2,7 @@
 #include <tetris/ai.hpp>
 #include <tetris/board.hpp>
 #include <tetris/game.hpp>
+#include <tetris/multiplayer.hpp>
 #include <tetris/tetromino.hpp>
 
 // Test Tetromino creation and rotation
@@ -107,5 +108,55 @@ TEST(AITest, FindBestMove) {
     EXPECT_GE(move.rotation, 0);
     EXPECT_LT(move.rotation, 4);
     EXPECT_GT(move.score, std::numeric_limits<int>::min());
+}
+
+// Test multi-player game initialization
+TEST(MultiPlayerTest, Initialization) {
+    tetris::MultiPlayerGame mp_game(3);
+    
+    EXPECT_EQ(mp_game.getNumPlayers(), 3);
+    EXPECT_TRUE(mp_game.isAnyPlaying());
+    EXPECT_EQ(mp_game.getActivePlayers(), 3);
+    
+    // Check each game is initialized
+    for (int i = 0; i < 3; i++) {
+        const tetris::Game &game = mp_game.getGame(i);
+        EXPECT_EQ(game.getState(), tetris::GameState::PLAYING);
+        EXPECT_EQ(game.getScore(), 0);
+    }
+}
+
+// Test multi-player game reset
+TEST(MultiPlayerTest, Reset) {
+    tetris::MultiPlayerGame mp_game(2);
+    
+    // Update a few times
+    mp_game.update();
+    mp_game.update();
+    
+    // Reset
+    mp_game.reset();
+    
+    // All games should be back to initial state
+    EXPECT_EQ(mp_game.getActivePlayers(), 2);
+    for (int i = 0; i < 2; i++) {
+        const tetris::Game &game = mp_game.getGame(i);
+        EXPECT_EQ(game.getState(), tetris::GameState::PLAYING);
+        EXPECT_EQ(game.getScore(), 0);
+    }
+}
+
+// Test multi-player game update
+TEST(MultiPlayerTest, Update) {
+    tetris::MultiPlayerGame mp_game(2);
+    
+    // Games should be playing
+    EXPECT_TRUE(mp_game.isAnyPlaying());
+    
+    // Update should not crash
+    mp_game.update();
+    
+    // At least initially, games should still be playing
+    EXPECT_TRUE(mp_game.isAnyPlaying());
 }
 

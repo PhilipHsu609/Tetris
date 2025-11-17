@@ -2,7 +2,9 @@
 
 namespace tetris {
 
-Renderer::Renderer() : game_win_(nullptr), info_win_(nullptr), board_height_(BOARD_HEIGHT), board_width_(BOARD_WIDTH) {}
+Renderer::Renderer()
+    : game_win_(nullptr), info_win_(nullptr), board_height_(BOARD_HEIGHT),
+      board_width_(BOARD_WIDTH) {}
 
 Renderer::~Renderer() { cleanup(); }
 
@@ -47,6 +49,16 @@ void Renderer::cleanup() {
         delwin(game_win_);
     if (info_win_)
         delwin(info_win_);
+    for (auto win : mp_game_wins_) {
+        if (win)
+            delwin(win);
+    }
+    for (auto win : mp_info_wins_) {
+        if (win)
+            delwin(win);
+    }
+    mp_game_wins_.clear();
+    mp_info_wins_.clear();
     endwin();
 }
 
@@ -128,6 +140,119 @@ void Renderer::renderGameOver(const Game &game) {
               "Press R to restart");
 
     wrefresh(game_win_);
+}
+
+void Renderer::renderSingleGame(WINDOW *game_win, WINDOW *info_win,
+                                 const Game &game, int player_id) {
+    werase(game_win);
+    werase(info_win);
+
+    int win_height = board_height_ + 2;
+    int win_width = board_width_ * 2 + 2;
+
+    drawBorder(game_win, win_height, win_width);
+    drawBorder(info_win, win_height, 20);
+
+    const Board &board = game.getBoard();
+    int start_y =
+        board.getHeight() > board_height_ ? board.getHeight() - board_height_ : 0;
+
+    // Draw board
+    for (int y = start_y; y < board.getHeight(); y++) {
+        for (int x = 0; x < board.getWidth(); x++) {
+            int cell = board.getCell(x, y);
+            if (cell > 0) {
+                drawBlock(game_win, x, y - start_y, cell);
+            }
+        }
+    }
+
+    // Draw current piece if game is still playing
+    if (game.getState() == GameState::PLAYING) {
+        const Tetromino &piece = game.getCurrentPiece();
+        Position pos = game.getCurrentPosition();
+        int color = static_cast<int>(piece.getType()) + 1;
+        for (const auto &block : piece.getBlocks()) {
+            int x = pos.x + block.x;
+            int y = pos.y + block.y;
+            if (y >= start_y && y < board.getHeight() && x >= 0 &&
+                x < board.getWidth()) {
+                drawBlock(game_win, x, y - start_y, color);
+            }
+        }
+    }
+
+    // Draw info
+    mvwprintw(info_win, 1, 1, "Player %d", player_id + 1);
+    mvwprintw(info_win, 3, 1, "Score: %d", game.getScore());
+    mvwprintw(info_win, 4, 1, "Level: %d", game.getLevel());
+    mvwprintw(info_win, 5, 1, "Lines: %d", game.getLinesCleared());
+
+    if (game.getState() == GameState::GAME_OVER) {
+        mvwprintw(info_win, 7, 1, "GAME OVER");
+    }
+
+    wrefresh(game_win);
+    wrefresh(info_win);
+}
+
+void Renderer::renderMultiPlayer(const MultiPlayerGame &mp_game) {
+    int num_players = mp_game.getNumPlayers();
+
+    // Get terminal size
+    int term_height, term_width;
+    getmaxyx(stdscr, term_height, term_width);
+
+    // Calculate layout: each player needs board_width * 2 + 2 for board, 20 for
+    // info
+    int player_width = board_width_ * 2 + 2 + 20 + 2; // board + info + spacing
+    int total_width = player_width * num_players;
+
+    // Check if we need to recreate windows
+    if (mp_game_wins_.size() != static_cast<size_t>(num_players)) {
+        // Clear old windows
+        for (auto win : mp_game_wins_) {
+            if (win)
+                delwin(win);
+        }
+        for (auto win : mp_info_wins_) {
+            if (win)
+                delwin(win);
+        }
+        mp_game_wins_.clear();
+        mp_info_wins_.clear();
+
+        // Create new windows for each player
+        int win_height = board_height_ + 2;
+        int win_width = board_width_ * 2 + 2;
+
+        for (int i = 0; i < num_players; i++) {
+            int x_offset = 2 + i * player_width;
+            mp_game_wins_.push_back(newwin(win_height, win_width, 1, x_offset));
+            mp_info_wins_.push_back(
+                newwin(win_height, 20, 1, x_offset + win_width + 2));
+        }
+    }
+
+    // Render each player's game
+    for (int i = 0; i < num_players; i++) {
+        renderSingleGame(mp_game_wins_[i], mp_info_wins_[i], mp_game.getGame(i),
+                         i);
+    }
+
+    // Draw control info at the bottom
+    int info_y = board_height_ + 3;
+    if (info_y < term_height - 1) {
+        mvprintw(info_y, 2, "Controls: R - Reset | Q - Quit");
+        if (!mp_game.isAnyPlaying()) {
+            mvprintw(info_y + 1, 2, "All games finished! Press R to restart.");
+        } else {
+            mvprintw(info_y + 1, 2, "Active players: %d/%d",
+                     mp_game.getActivePlayers(), num_players);
+        }
+    }
+
+    refresh();
 }
 
 } // namespace tetris

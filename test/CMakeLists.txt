@@ -13,6 +13,7 @@ target_sources(
     ${PROJECT_SOURCE_DIR}/src/board.cpp
     ${PROJECT_SOURCE_DIR}/src/game.cpp
     ${PROJECT_SOURCE_DIR}/src/ai.cpp
+    ${PROJECT_SOURCE_DIR}/src/multiplayer.cpp
 )
 
 # Include directories for tests
