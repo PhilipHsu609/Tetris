@@ -13,6 +13,7 @@ target_sources(
     game.cpp
     renderer.cpp
     ai.cpp
+    multiplayer.cpp
 )
 
 # Include directories
