@@ -7,11 +7,13 @@ namespace tetris {
 // Minimum dimensions for a reasonable display
 constexpr int MIN_BOARD_HEIGHT = 10;
 constexpr int INFO_PANEL_WIDTH = 20;
+// Row height includes: board height + 2 (borders) + 1 (spacing between rows)
+constexpr int ROW_HEIGHT_OVERHEAD = 3;
 
 Renderer::Renderer()
     : game_win_(nullptr), info_win_(nullptr), board_height_(BOARD_HEIGHT),
       board_width_(BOARD_WIDTH), term_height_(0), term_width_(0),
-      last_num_players_(0) {}
+      last_num_players_(0), cached_layout_{0, 0, 0} {}
 
 Renderer::~Renderer() { cleanup(); }
 
@@ -216,8 +218,9 @@ void Renderer::renderSingleGame(WINDOW *game_win, WINDOW *info_win,
     wrefresh(info_win);
 }
 
-void Renderer::calculateLayout(int num_players, int &cols, int &rows,
-                               int &player_board_height) const {
+LayoutInfo Renderer::calculateLayout(int num_players) const {
+    LayoutInfo layout;
+
     // Calculate how many players can fit per row
     // Each player needs: board_width * 2 + 2 (game) + INFO_PANEL_WIDTH (info) +
     // 2 (spacing)
@@ -225,23 +228,25 @@ void Renderer::calculateLayout(int num_players, int &cols, int &rows,
 
     // Leave some margin on the sides
     int available_width = term_width_ - 4;
-    cols = std::max(1, available_width / player_width);
+    layout.cols = std::max(1, available_width / player_width);
 
     // Don't use more columns than players
-    cols = std::min(cols, num_players);
+    layout.cols = std::min(layout.cols, num_players);
 
     // Calculate rows needed
-    rows = (num_players + cols - 1) / cols;
+    layout.rows = (num_players + layout.cols - 1) / layout.cols;
 
     // Calculate the height available for each row
     // Reserve: 1 for top margin, 2 for control info at bottom
-    int available_height = term_height_ - 3;
-    int height_per_row = available_height / rows;
+    int available_height = term_height_ - ROW_HEIGHT_OVERHEAD;
+    int height_per_row = available_height / layout.rows;
 
-    // Each player needs: board height + 2 (borders) + 1 (row spacing)
-    // Solve for board height: height_per_row = board_height + 3
-    player_board_height = height_per_row - 3;
-    player_board_height = std::clamp(player_board_height, MIN_BOARD_HEIGHT, BOARD_HEIGHT);
+    // Each player needs: board height + ROW_HEIGHT_OVERHEAD (2 borders + 1 row spacing)
+    layout.player_board_height = height_per_row - ROW_HEIGHT_OVERHEAD;
+    layout.player_board_height =
+        std::clamp(layout.player_board_height, MIN_BOARD_HEIGHT, BOARD_HEIGHT);
+
+    return layout;
 }
 
 void Renderer::recreateMultiPlayerWindows(int num_players) {
@@ -257,12 +262,11 @@ void Renderer::recreateMultiPlayerWindows(int num_players) {
     mp_game_wins_.clear();
     mp_info_wins_.clear();
 
-    // Calculate layout
-    int cols, rows, player_board_height;
-    calculateLayout(num_players, cols, rows, player_board_height);
+    // Calculate and cache layout
+    cached_layout_ = calculateLayout(num_players);
 
     // Update board height for rendering
-    board_height_ = player_board_height;
+    board_height_ = cached_layout_.player_board_height;
 
     int win_height = board_height_ + 2;
     int win_width = board_width_ * 2 + 2;
@@ -270,9 +274,10 @@ void Renderer::recreateMultiPlayerWindows(int num_players) {
     int row_height = win_height + 1;
 
     // Create windows for each player
+    // Note: Windows that don't fit on screen are set to nullptr and skipped during rendering
     for (int i = 0; i < num_players; i++) {
-        int col = i % cols;
-        int row = i / cols;
+        int col = i % cached_layout_.cols;
+        int row = i / cached_layout_.cols;
 
         int x_offset = 2 + col * player_width;
         int y_offset = 1 + row * row_height;
@@ -283,7 +288,7 @@ void Renderer::recreateMultiPlayerWindows(int num_players) {
             mp_info_wins_.push_back(
                 newwin(win_height, INFO_PANEL_WIDTH, y_offset, x_offset + win_width + 2));
         } else {
-            // Create minimal windows off-screen - they won't be rendered
+            // Window doesn't fit - mark as nullptr to skip during rendering
             mp_game_wins_.push_back(nullptr);
             mp_info_wins_.push_back(nullptr);
         }
@@ -317,21 +322,18 @@ void Renderer::renderMultiPlayer(const MultiPlayerGame &mp_game) {
 
     // Render each player's game
     for (int i = 0; i < num_players; i++) {
-        if (mp_game_wins_[static_cast<size_t>(i)] != nullptr &&
-            mp_info_wins_[static_cast<size_t>(i)] != nullptr) {
-            renderSingleGame(mp_game_wins_[static_cast<size_t>(i)],
-                             mp_info_wins_[static_cast<size_t>(i)],
+        size_t idx = static_cast<size_t>(i);
+        if (mp_game_wins_[idx] != nullptr && mp_info_wins_[idx] != nullptr) {
+            renderSingleGame(mp_game_wins_[idx], mp_info_wins_[idx],
                              mp_game.getGame(i), i);
         }
     }
 
-    // Calculate layout for status bar position
-    int cols, rows, player_board_height;
-    calculateLayout(num_players, cols, rows, player_board_height);
-    int row_height = player_board_height + 3;
+    // Use cached layout for status bar position
+    int row_height = cached_layout_.player_board_height + ROW_HEIGHT_OVERHEAD;
 
     // Draw control info at the bottom
-    int info_y = 1 + rows * row_height;
+    int info_y = 1 + cached_layout_.rows * row_height;
     if (info_y < term_height_ - 1) {
         // Clear the info line area first
         move(info_y, 0);
@@ -345,7 +347,8 @@ void Renderer::renderMultiPlayer(const MultiPlayerGame &mp_game) {
             mvprintw(info_y + 1, 2, "All games finished! Press R to restart.");
         } else {
             mvprintw(info_y + 1, 2, "Active players: %d/%d  Layout: %dx%d",
-                     mp_game.getActivePlayers(), num_players, cols, rows);
+                     mp_game.getActivePlayers(), num_players,
+                     cached_layout_.cols, cached_layout_.rows);
         }
     }
 
